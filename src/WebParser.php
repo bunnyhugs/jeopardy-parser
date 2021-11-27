@@ -108,8 +108,8 @@ class WebParser implements Parser
                 // Should be thrown if we hit a daily double.
 
                 // We need to determine the proper value for this clue, not what the wager was.
-                $valueModifier = ceil($clueNumber / 6);
-                $baseClueValue = $roundNumber * 200;
+                $valueModifier = floor(($clueNumber-1) / 6) + 1;
+                $baseClueValue = ($roundNumber) * 100;
                 $value = $valueModifier * $baseClueValue;
                 $daily_double = true;
             }
