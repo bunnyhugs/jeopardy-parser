@@ -1,4 +1,5 @@
 .idea/
 vendor/
-output/questions-rd*.json
+output/*.json*
 .DS_Store
+composer.lock

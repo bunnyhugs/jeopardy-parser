@@ -83,10 +83,11 @@ class WebParser implements Parser
         });
 
         $clueNumber = 0;
+		$imageClues = 0;
 
-        $clues = $round->filter('td.clue')->each(function (Crawler $clueElement) use (&$clueNumber, $roundNumber) {
+        $clues = $round->filter('td.clue')->each(function (Crawler $clueElement) use (&$clueNumber, $roundNumber, &$imageClues) {
             $clueNumber++;
-
+				
             $clue = null;
             $answer = null;
             $value = null;
@@ -97,6 +98,14 @@ class WebParser implements Parser
                 return ['clue' => $clue, 'answer' => $answer, 'value' => $value, 'daily_double' => $daily_double];
             }
             $clue = $clueElement->filter('td.clue_text')->first()->text();
+
+			// check if there's a link in this clue: it means it was a video/photo clue (blech)
+			$clueLink = $clueElement->filter('td.clue_text')->filter('a');
+			if ($clueLink->count() > 0) {
+				$imageClues++;
+				$clue = "[IMAGE CLUE]<br />".$clue;
+			}
+
             $answerMouseover = $clueElement->filter('div')->getNode(0)->attributes->getNamedItem('onmouseover')->nodeValue;
             $matches = [];
             preg_match('{<em class="correct_response">(.*)</em>}', $answerMouseover, $matches);
@@ -140,6 +149,8 @@ class WebParser implements Parser
             $catIndex++;
         }
 
+		print "Found image clues: " . $imageClues . " \n";
+		
         return $categories;
     }
 
