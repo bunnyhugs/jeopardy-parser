@@ -31,7 +31,7 @@ class WebParser implements Parser
         $categories = new Collection();
 
         $rounds = $crawler->filter('table.round')->each(function($round) use (&$roundNumber) {
-            $categories = $this->processRound($round);
+            $categories = $this->processRound($round, $roundNumber);
             $roundNumber++;
 
             return $categories;
@@ -47,7 +47,7 @@ class WebParser implements Parser
 
         $final_answer = substr($final_text, $start);
 
-        $final_answer = substr($final_answer, 0, strpos($final_answer, '</'));
+        $final_answer = substr($final_answer, 0, strpos($final_answer, '</em>'));
         $games = [];
 
         $roundNumber = 1;
@@ -76,17 +76,19 @@ class WebParser implements Parser
         // TODO: Implement parseFinal() method.
     }
 
-    private function processRound(\Symfony\Component\DomCrawler\Crawler $round, $roundNumber = 1)
+    private function processRound(\Symfony\Component\DomCrawler\Crawler $round, $roundNumber)
     {
         $categoryNames = $round->filter('td.category_name')->each(function (Crawler $element) {
             return $element->text();
         });
 
         $clueNumber = 0;
+		$imageClues = 0;
 
-        $clues = $round->filter('td.clue')->each(function (Crawler $clueElement) use (&$clueNumber, $roundNumber) {
-            $clueNumber++;
-
+        $clues = $round->filter('td.clue')->each(function (Crawler $clueElement) use (&$clueNumber, $roundNumber, &$imageClues)
+		{
+			$clueNumber++;
+		
             $clue = null;
             $answer = null;
             $value = null;
@@ -97,6 +99,14 @@ class WebParser implements Parser
                 return ['clue' => $clue, 'answer' => $answer, 'value' => $value, 'daily_double' => $daily_double];
             }
             $clue = $clueElement->filter('td.clue_text')->first()->text();
+
+			// check if there's a link in this clue: it means it was a video/photo clue (blech)
+			$clueLink = $clueElement->filter('td.clue_text')->filter('a');
+			if ($clueLink->count() > 0) {
+				$imageClues++;
+				$clue = "[IMAGE CLUE]<br />".$clue;
+			}
+
             $answerMouseover = $clueElement->filter('div')->getNode(0)->attributes->getNamedItem('onmouseover')->nodeValue;
             $matches = [];
             preg_match('{<em class="correct_response">(.*)</em>}', $answerMouseover, $matches);
@@ -108,11 +118,12 @@ class WebParser implements Parser
                 // Should be thrown if we hit a daily double.
 
                 // We need to determine the proper value for this clue, not what the wager was.
-                $valueModifier = ceil($clueNumber / 6);
-                $baseClueValue = $roundNumber * 200;
+                $valueModifier = floor(($clueNumber-1) / 6) + 1;
+                $baseClueValue = ($roundNumber) * 200;
                 $value = $valueModifier * $baseClueValue;
+				print "<br/>\n Daily double val: " . $value;
                 $daily_double = true;
-            }
+			}
 
             return new Clue($value, $clue, $answer, $daily_double);
         });
@@ -140,9 +151,9 @@ class WebParser implements Parser
             $catIndex++;
         }
 
-        // We only want the first five categories, our Jeopardy tool does not support six. Drop the last one.
-        $categories->forget(5);
-
+		print "<br/>\nFound total clues: " . $clueNumber . " \n";
+		print "<br/>\nFound image clues: " . $imageClues . " \n";
+		
         return $categories;
     }
 
