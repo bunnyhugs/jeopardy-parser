@@ -107,11 +107,14 @@ class WebParser implements Parser
 				$clue = "[IMAGE CLUE]<br />".$clue;
 			}
 
-            $answerMouseover = $clueElement->filter('div')->getNode(0)->attributes->getNamedItem('onmouseover')->nodeValue;
-            $matches = [];
-            preg_match('{<em class="correct_response">(.*)</em>}', $answerMouseover, $matches);
+#            $answerMouseover = $clueElement->filter('div')->getNode(0)->attributes->getNamedItem('onmouseover')->nodeValue;
+#            $matches = [];
+#            preg_match('{<em class="correct_response">(.*)</em>}', $answerMouseover, $matches);
 
-            $answer = $matches[1];
+#            $answer = $matches[1];
+			$answer = $clueElement
+				->filter('em.correct_response')
+				->text();
             try {
                 $value = $this->cleanValue($clueElement->filter('td.clue_value')->first()->text());
             } catch (InvalidArgumentException $exception) {
