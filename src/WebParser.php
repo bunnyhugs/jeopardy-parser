@@ -40,14 +40,20 @@ class WebParser implements Parser
         $final_category = $crawler->filter('#final_jeopardy_round td.category_name')->first()->text();
         $final_clue = $crawler->filter('td#clue_FJ')->first()->text();
 
-        $final_text = $crawler->filter('.final_round div')->first()->attr('onmouseover');
+#        $final_text = $crawler->filter('.final_round div')->first()->attr('onmouseover');
 
         // 19 is number of characters in correct_response\">
-        $start = strpos($final_text, 'correct_response') + 19;
+#        $start = strpos($final_text, 'correct_response') + 19;
 
-        $final_answer = substr($final_text, $start);
+#        $final_answer = substr($final_text, $start);
 
-        $final_answer = substr($final_answer, 0, strpos($final_answer, '</em>'));
+#        $final_answer = substr($final_answer, 0, strpos($final_answer, '</em>'));
+
+		$final_answer = $crawler
+				->filter('td#clue_FJ_r')->filter('em.correct_response')
+				->text();
+
+
         $games = [];
 
         $roundNumber = 1;
